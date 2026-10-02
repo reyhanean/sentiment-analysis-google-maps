@@ -1,0 +1,24 @@
+{% extends "base.html" %} {% block title %}Daftar — Ramayana Sentiment{% endblock %} {% block body %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <img src="{{ url_for('static', filename='logo-ramayana.png') }}" class="brand-mark" alt="Logo" />
+    <h1>Buat Akun</h1>
+    <p class="auth-sub">Sistem Analisis Sentimen Ramayana — Pasar Minggu</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, msg in messages %}
+    <div class="flash flash-{{ category }}">{{ msg }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <label>Username</label>
+      <input type="text" name="username" required autofocus />
+      <label>Password</label>
+      <input type="password" name="password" required minlength="6" />
+      <label>Konfirmasi Password</label>
+      <input type="password" name="confirm" required minlength="6" />
+      <button type="submit">Daftar</button>
+    </form>
+    <p class="auth-switch">Sudah punya akun? <a href="{{ url_for('login') }}">Masuk di sini</a></p>
+  </div>
+</div>
+{% endblock %}

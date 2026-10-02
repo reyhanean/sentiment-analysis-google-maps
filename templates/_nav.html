@@ -1,0 +1,19 @@
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='logo-ramayana.png') }}" class="brand-mark small" alt="Logo" />
+      <span class="brand-text">
+        <strong>Sistem Analisis Sentimen Ramayana</strong>
+        <small>Pasar Minggu &middot; Ulasan Google Maps</small>
+      </span>
+    </div>
+    <nav class="main-nav">
+      <a href="{{ url_for('predict_page') }}" class="{{ 'active' if request.path == url_for('predict_page') else '' }}">Prediksi</a>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.path == url_for('dashboard') else '' }}">Dashboard</a>
+    </nav>
+    <div class="header-right">
+      <span class="user-chip">{{ username }}</span>
+      <a href="{{ url_for('logout') }}" class="logout-link">Keluar</a>
+    </div>
+  </div>
+</header>

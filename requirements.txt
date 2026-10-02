@@ -1,0 +1,12 @@
+flask
+werkzeug
+scikit-learn
+joblib
+pandas
+numpy
+matplotlib
+seaborn
+Sastrawi
+wordcloud
+nltk
+reportlab

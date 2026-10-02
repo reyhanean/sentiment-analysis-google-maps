@@ -1,0 +1,164 @@
+{% extends "base.html" %} {% block title %}Dashboard — Sistem Analisis Sentimen Ramayana{% endblock %} {% block body %} {% include "_nav.html" %}
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, msg in messages %}
+  <div class="flash flash-{{ category }}">{{ msg }}</div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <section class="dash-header">
+    <div class="hero-eyebrow">Laporan Hasil Penelitian</div>
+    <h1>Dashboard Evaluasi Model</h1>
+  </section>
+
+  <!-- ============ UPLOAD DATASET ============ -->
+  <section class="upload-card">
+    <h3>Upload Dataset Mentah</h3>
+    <p class="muted">
+      Upload CSV berisi kolom teks ulasan + rating bintang (1-5). Sistem otomatis menjalankan preprocessing, labeling, split, oversampling, TF-IDF, sampai training model. Upload dataset baru akan melatih ulang &amp; menimpa model yang ada.
+    </p>
+
+    <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data" id="upload-form">
+      <div class="file-drop">
+        <input type="file" name="dataset_file" id="dataset_file" accept=".csv" required />
+        <label for="dataset_file" id="file-label">Pilih file CSV atau tarik ke sini...</label>
+      </div>
+      <button type="submit" id="upload-btn">Proses &amp; Latih Model</button>
+    </form>
+    <div id="upload-loading" class="upload-loading hidden">
+      <div class="spinner"></div>
+      <span>Memproses dataset &amp; melatih model — cek terminal untuk melihat progres tahap demi tahap (stemming paling lama)...</span>
+    </div>
+  </section>
+
+  {% if metrics is none %}
+  <section class="empty-state">
+    <div class="ticket">
+      <h3>Belum ada hasil</h3>
+      <p>Upload dataset di atas untuk mulai training model.</p>
+    </div>
+  </section>
+  {% else %}
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="ringkasan">Ringkasan</button>
+    <button class="tab-btn" data-tab="distribusi">Distribusi Sentimen</button>
+    <button class="tab-btn" data-tab="confusion">Confusion Matrix</button>
+    <button class="tab-btn" data-tab="topwords">Top 20 Kata</button>
+    <button class="tab-btn" data-tab="wordcloud">Word Cloud</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-ringkasan">
+    <div class="stat-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ metrics.total_data }}</span>
+        <span class="stat-label">Total Data</span>
+      </div>
+      <div class="stat-card accent-maroon">
+        <span class="stat-value">{{ "%.2f"|format(metrics.akurasi * 100) }}%</span>
+        <span class="stat-label">Akurasi</span>
+      </div>
+      <div class="stat-card accent-gold">
+        <span class="stat-value">{{ "%.2f"|format(metrics.precision * 100) }}%</span>
+        <span class="stat-label">Precision</span>
+      </div>
+      <div class="stat-card accent-green">
+        <span class="stat-value">{{ "%.2f"|format(metrics.f1 * 100) }}%</span>
+        <span class="stat-label">F1-Score</span>
+      </div>
+    </div>
+
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Kelas</th>
+          <th>Precision</th>
+          <th>Recall</th>
+          <th>F1-Score</th>
+          <th>Support</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for label in ['Negatif', 'Netral', 'Positif'] %} {% if label in metrics.report %}
+        <tr>
+          <td>{{ label }}</td>
+          <td>{{ "%.2f"|format(metrics.report[label]['precision']) }}</td>
+          <td>{{ "%.2f"|format(metrics.report[label]['recall']) }}</td>
+          <td>{{ "%.2f"|format(metrics.report[label]['f1-score']) }}</td>
+          <td>{{ metrics.report[label]['support']|int }}</td>
+        </tr>
+        {% endif %} {% endfor %}
+        <tr class="row-divider">
+          <td>Weighted avg</td>
+          <td>{{ "%.2f"|format(metrics.report['weighted avg']['precision']) }}</td>
+          <td>{{ "%.2f"|format(metrics.report['weighted avg']['recall']) }}</td>
+          <td>{{ "%.2f"|format(metrics.report['weighted avg']['f1-score']) }}</td>
+          <td>{{ metrics.report['weighted avg']['support']|int }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="model-specs">
+      <h3>Spesifikasi Model</h3>
+      <ul>
+        <li><span>Algoritma</span><strong>{{ metrics.model_spec.algoritma }}</strong></li>
+        <li><span>Ekstraksi Fitur</span><strong>{{ metrics.model_spec.ekstraksi_fitur }}</strong></li>
+        <li><span>Balancing</span><strong>{{ metrics.model_spec.balancing }}</strong></li>
+        <li><span>Split</span><strong>{{ metrics.model_spec.split }}</strong></li>
+      </ul>
+    </div>
+
+    <div class="report-buttons">
+      <a href="{{ url_for('laporan', jenis='dataset') }}" class="btn-secondary">Laporan 1: Dataset</a>
+      <a href="{{ url_for('laporan', jenis='evaluasi') }}" class="btn-secondary">Laporan 2: Evaluasi Model</a>
+      <a href="{{ url_for('laporan', jenis='confusion') }}" class="btn-secondary">Laporan 3: Confusion Matrix</a>
+      <a href="{{ url_for('laporan', jenis='kata') }}" class="btn-secondary">Laporan 4: Analisis Kata</a>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-distribusi">
+    <div class="chart-grid-2">
+      <div class="chart-card">
+        <h3>Distribusi Label Sentimen</h3>
+        <img src="{{ url_for('static', filename=metrics.chart_distribusi) }}" />
+      </div>
+      <div class="chart-card">
+        <h3>Oversampling: Sebelum vs Sesudah</h3>
+        <img src="{{ url_for('static', filename=metrics.chart_oversampling) }}" />
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-confusion">
+    <div class="chart-card">
+      <h3>Confusion Matrix</h3>
+      <img src="{{ url_for('static', filename=metrics.chart_confusion) }}" />
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-topwords">
+    <div class="chart-card">
+      <h3>20 Kata Paling Sering Muncul</h3>
+      <img src="{{ url_for('static', filename=metrics.chart_top_words) }}" />
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-wordcloud">
+    <div class="wordcloud-grid">
+      {% for label, path in metrics.chart_wordclouds.items() %}
+      <div class="chart-card small">
+        <h3>{{ label }}</h3>
+        <img src="{{ url_for('static', filename=path) }}" />
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% endif %}
+</main>
+
+<footer class="site-footer">
+  <span>Complement Naive Bayes &middot; TF-IDF (1,2-gram) &middot; Oversampling &middot; &alpha;=0.3</span>
+</footer>
+
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+{% endblock %}
