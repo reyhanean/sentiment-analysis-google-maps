@@ -1,8 +1,4 @@
-# Ramayana Sentiment Lab (versi sederhana)
-
-Aplikasi mandiri — TIDAK bergantung ke Colab/model manapun. Semua training
-dilakukan di dalam aplikasi ini sendiri saat kamu upload dataset mentah.
-
+# Ramayana Sentiment Lab 
 ## Struktur (cuma 4 file inti)
 
 ```
